@@ -2,9 +2,9 @@ namespace ParcelDelivery.Api.Models;
 
 public class History
 {
-  public int HistoryId { get; set; }
-  public string Status { get; set; } = string.Empty;
+  public int historyId { get; set; }
+  public string status { get; set; } = string.Empty;
 
-  public string TimeStamp { get; set; } = string.Empty;
+  public string timeStamp { get; set; } = string.Empty;
 
 }

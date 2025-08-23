@@ -1,8 +1,8 @@
+
 namespace ParcelDelivery.Api.Models;
 
-public class Parcel
+public class ParcelReadDto
 {
-  public int parcelId { get; set; }
 
   public string barcode { get; set; } = string.Empty;
 
@@ -25,5 +25,5 @@ public class Parcel
 
   public string contents { get; set; } = string.Empty;
 
-  public ICollection<History> history { get; set; } = [];
+
 }

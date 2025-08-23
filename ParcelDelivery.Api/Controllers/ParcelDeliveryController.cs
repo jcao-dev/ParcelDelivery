@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using ParcelDelivery.Api.Models;
+using ParcelDelivery.Api.Services;
 
 namespace ParcelDelivery.Api.Controllers;
 
@@ -7,14 +9,27 @@ namespace ParcelDelivery.Api.Controllers;
 public class ParcelDeliveryController : ControllerBase
 {
 
-  public ParcelDeliveryController()
+  private readonly IParcelService _parcelService;
+  public ParcelDeliveryController(ParcelService parcelService)
   {
+    _parcelService = parcelService;
   }
 
   [HttpPost]
-  public ActionResult PostParcel()
+  public ActionResult<ParcelReadDto> PostParcel(ParcelCreateDto parcelCreateDto)
   {
-    return Ok();
+
+    try
+    {
+      var parcelReadDto = _parcelService.CreateParcel(parcelCreateDto);
+      return Ok(parcelReadDto);
+    }
+    catch (Exception ex)
+    {
+      ModelState.AddModelError("Error", ex.Message);
+      return BadRequest(ModelState);
+    }
+
   }
 
   [HttpPatch]
