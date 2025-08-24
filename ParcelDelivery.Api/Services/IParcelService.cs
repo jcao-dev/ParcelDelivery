@@ -11,4 +11,6 @@ public interface IParcelService
 
   public string PatchParcelStatus(string barcode, ParcelUpdateStatusDto parcelUpdateStatusDto);
 
+  public ParcelReadWithHistoryDto GetParcel(string barcode);
+
 }

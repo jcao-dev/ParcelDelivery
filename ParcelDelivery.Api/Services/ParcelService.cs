@@ -37,7 +37,7 @@ public class ParcelService : IParcelService
     }
 
 
-    var dateValues = getDateValues(parcelCreateDto) ?? throw new Exception("Cannot calculate dates");
+    var dateValues = GetDateValues(parcelCreateDto) ?? throw new Exception("Cannot calculate dates");
 
     var newParcel = new Parcel()
     {
@@ -116,7 +116,36 @@ public class ParcelService : IParcelService
 
   }
 
-  private DateValues? getDateValues(ParcelCreateDto parcelCreateDto)
+  public ParcelReadWithHistoryDto GetParcel(string barcode)
+  {
+    var parcel = FindExistingParcel(barcode);
+
+    var parcelRead = new ParcelReadWithHistoryDto()
+    {
+      barcode = parcel.barcode,
+      status = parcel.status,
+      launchDate = parcel.launchDate,
+      etaDays = parcel.etaDays,
+      estimatedArrivalDate = parcel.estimatedArrivalDate,
+      origin = parcel.origin,
+      destination = parcel.destination,
+      sender = parcel.sender,
+      recipient = parcel.recipient,
+      contents = parcel.contents,
+      history = parcel.history.Select(history =>
+      {
+        return new HistoryReadDto
+        {
+          status = history.status,
+          timeStamp = history.timeStamp
+        };
+      }).ToList()
+    };
+
+    return parcelRead;
+  }
+
+  private DateValues? GetDateValues(ParcelCreateDto parcelCreateDto)
   {
 
     var dateValues = new DateValues()
@@ -184,7 +213,7 @@ public class ParcelService : IParcelService
 
     if (!numbers.All(char.IsNumber))
     {
-      throw new Exception("Barcode have 19 digits");
+      throw new Exception("Barcode must have 19 digits");
     }
 
 

@@ -49,10 +49,17 @@ public class ParcelDeliveryController : ControllerBase
   }
 
   [HttpGet("{barcode}")]
-  public ActionResult GetParcel(string barcode)
+  public ActionResult<ParcelReadWithHistoryDto> GetParcel(string barcode)
   {
-
-    return Ok();
-
+    try
+    {
+      var parcelWithHistory = _parcelService.GetParcel(barcode);
+      return Ok(parcelWithHistory);
+    }
+    catch (Exception ex)
+    {
+      ModelState.AddModelError("Error", ex.Message);
+      return BadRequest(ModelState);
+    }
   }
 }
