@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ParcelDelivery.Api.Dto;
 using ParcelDelivery.Api.Models;
 using ParcelDelivery.Api.Services;
 
@@ -21,7 +22,7 @@ public class ParcelDeliveryController : ControllerBase
 
     try
     {
-      var parcelReadDto = _parcelService.CreateParcel(parcelCreateDto);
+      var parcelReadDto = _parcelService.PostParcel(parcelCreateDto);
       return Ok(parcelReadDto);
     }
     catch (Exception ex)
@@ -32,15 +33,26 @@ public class ParcelDeliveryController : ControllerBase
 
   }
 
-  [HttpPatch]
-  public ActionResult PatchParcel()
+  [HttpPatch("{barcode}")]
+  public ActionResult<string> PatchParcelStatus(string barcode, ParcelUpdateStatusDto parcelUpdateStatusDto)
   {
-    return Ok();
+    try
+    {
+      var message = _parcelService.PatchParcelStatus(barcode, parcelUpdateStatusDto);
+      return Ok(message);
+    }
+    catch (Exception ex)
+    {
+      ModelState.AddModelError("Error", ex.Message);
+      return BadRequest(ModelState);
+    }
   }
 
   [HttpGet("{barcode}")]
   public ActionResult GetParcel(string barcode)
   {
+
     return Ok();
+
   }
 }

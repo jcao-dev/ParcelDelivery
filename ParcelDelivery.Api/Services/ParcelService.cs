@@ -1,4 +1,4 @@
-
+using ParcelDelivery.Api.Dto;
 using ParcelDelivery.Api.Models;
 
 namespace ParcelDelivery.Api.Services;
@@ -15,8 +15,27 @@ public class ParcelService : IParcelService
 
   private List<Parcel> parcels { get; set; } = [];
 
-  public ParcelReadDto CreateParcel(ParcelCreateDto parcelCreateDto)
+  private Dictionary<string, List<string>> statuses = new Dictionary<string, List<string>>
   {
+    ["Created"] = ["OnRocketToMars"],
+    ["OnRocketToMars"] = ["LandedOnMars", "Lost"],
+    ["LandedOnMars"] = ["OutForMartianDelivery"],
+    ["OutForMartianDelivery"] = ["Delivered", "Lost"],
+    ["Delivered"] = [],
+    ["Lost"] = []
+  };
+
+  public ParcelReadDto PostParcel(ParcelCreateDto parcelCreateDto)
+  {
+
+    CheckValidBarcode(parcelCreateDto.barcode);
+
+    var parcel = parcels.FirstOrDefault(parcel => parcel.barcode == parcelCreateDto.barcode);
+    if (parcel != null)
+    {
+      throw new Exception("Parcel with this barcode already exists");
+    }
+
 
     var dateValues = getDateValues(parcelCreateDto) ?? throw new Exception("Cannot calculate dates");
 
@@ -24,7 +43,7 @@ public class ParcelService : IParcelService
     {
       parcelId = parcels.Count + 1,
       barcode = parcelCreateDto.barcode,
-      status = "Open",
+      status = statuses.First().Key,
       launchDate = dateValues.launchDate,
       etaDays = dateValues.etaDays,
       estimatedArrivalDate = dateValues.estimatedArrivalDate,
@@ -33,8 +52,15 @@ public class ParcelService : IParcelService
       sender = parcelCreateDto.sender,
       recipient = parcelCreateDto.recipient,
       contents = parcelCreateDto.contents,
-      history = []
+      history = [
+        new History {
+          historyId = 1,
+          status = statuses.First().Key,
+          timeStamp = DateTime.UtcNow.ToString("yyyy-MM-dd")
+        }
+      ]
     };
+
 
     parcels.Add(newParcel);
 
@@ -53,6 +79,41 @@ public class ParcelService : IParcelService
     };
 
     return parcelReadDto;
+  }
+
+
+  public string PatchParcelStatus(string barcode, ParcelUpdateStatusDto parcelUpdateStatusDto)
+  {
+    var parcel = FindExistingParcel(barcode);
+
+    var currentStatus = statuses.FirstOrDefault(status => status.Key == parcel.status);
+
+    var validStatuses = currentStatus.Value;
+
+    if (validStatuses == null || validStatuses.Count == 0)
+    {
+      throw new Exception($"Parcel has a status of {parcel.status} and cannot be changed");
+    }
+
+    var hasValidTransition = validStatuses.Any(status => status == parcelUpdateStatusDto.newStatus);
+
+    if (!hasValidTransition)
+    {
+      throw new Exception($"{parcelUpdateStatusDto.newStatus} is not a valid status for a parcel {parcel.status} can only transition to the following - {string.Join("/", validStatuses)}");
+    }
+
+    parcel.status = parcelUpdateStatusDto.newStatus;
+    var newHistory = new History()
+    {
+      historyId = parcel.history.Count + 1,
+      status = parcel.status,
+      timeStamp = DateTime.UtcNow.ToString("yyyy-MM-dd")
+    };
+    parcel.history.Add(newHistory);
+
+    return $"The status of {barcode} has been changed to {parcel.status}";
+
+
   }
 
   private DateValues? getDateValues(ParcelCreateDto parcelCreateDto)
@@ -105,6 +166,48 @@ public class ParcelService : IParcelService
     var ead = launch.AddDays(days);
     return ead.ToString("yyyy-MM-dd");
 
+  }
+
+  private void CheckValidBarcode(string barcode)
+  {
+    if (barcode.Length != 25)
+    {
+      throw new Exception("Barcode needs to be 25 characters long");
+    }
+
+    if (!barcode.StartsWith("RMARS"))
+    {
+      throw new Exception("Barcode has to start with RMAS");
+    }
+
+    var numbers = barcode.Substring(5, 19);
+
+    if (!numbers.All(char.IsNumber))
+    {
+      throw new Exception("Barcode have 19 digits");
+    }
+
+
+    var lastLetter = barcode[barcode.Length - 1];
+    if (!(lastLetter >= 'A' && lastLetter <= 'Z'))
+    {
+      throw new Exception("Barcode must end with a capital letter");
+    }
+
+
+  }
+
+  private Parcel FindExistingParcel(string barcode)
+  {
+    CheckValidBarcode(barcode);
+
+    var parcel = parcels.FirstOrDefault(parcel => parcel.barcode == barcode);
+    if (parcel == null)
+    {
+      throw new Exception("Parcel with this barcode does not exists");
+    }
+
+    return parcel;
   }
 
 }
