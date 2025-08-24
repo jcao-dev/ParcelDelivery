@@ -12,5 +12,8 @@ public interface IParcelService
   public string PatchParcelStatus(string barcode, ParcelUpdateStatusDto parcelUpdateStatusDto);
 
   public ParcelReadWithHistoryDto GetParcel(string barcode);
-
+  public DateValues? GetDateValues(ParcelCreateDto parcelCreateDto);
+  public DateTime GetNextWednesday();
+  public DateTime GetNextStandardDate();
+  public Parcel FindExistingParcel(string barcode);
 }

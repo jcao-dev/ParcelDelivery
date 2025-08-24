@@ -145,7 +145,7 @@ public class ParcelService : IParcelService
     return parcelRead;
   }
 
-  private DateValues? GetDateValues(ParcelCreateDto parcelCreateDto)
+  public DateValues? GetDateValues(ParcelCreateDto parcelCreateDto)
   {
 
     var dateValues = new DateValues()
@@ -159,21 +159,21 @@ public class ParcelService : IParcelService
     {
       case "Express":
 
-        var expressLaunchDateTime = GetNextWednesday();
+        var expressLaunchDate = GetNextWednesday();
 
-        dateValues.launchDate = expressLaunchDateTime.ToString("yyyy-MM-dd");
+        dateValues.launchDate = expressLaunchDate.ToString("yyyy-MM-dd");
         dateValues.etaDays = 90;
-        dateValues.estimatedArrivalDate = CalculateEAD(expressLaunchDateTime, dateValues.etaDays);
+        dateValues.estimatedArrivalDate = CalculateEAD(expressLaunchDate, dateValues.etaDays);
 
         return dateValues;
       case "Standard":
 
-        dateValues.launchDate = "2025-10-01";
 
-        var standardLaunchDateTime = DateTime.Parse(dateValues.launchDate);
+        var nextStandardLaunchDate = GetNextStandardDate();
+        dateValues.launchDate = nextStandardLaunchDate.ToString("yyyy-MM-dd");
 
         dateValues.etaDays = 180;
-        dateValues.estimatedArrivalDate = CalculateEAD(standardLaunchDateTime, dateValues.etaDays);
+        dateValues.estimatedArrivalDate = CalculateEAD(nextStandardLaunchDate, dateValues.etaDays);
 
         return dateValues;
       default:
@@ -181,41 +181,39 @@ public class ParcelService : IParcelService
     }
 
   }
-  private DateTime GetNextWednesday()
+  public DateTime GetNextWednesday()
   {
     DateTime result = DateTime.Now.AddDays(1);
     while (result.DayOfWeek != DayOfWeek.Wednesday)
       result = result.AddDays(1);
     return result;
-
   }
 
-  private string CalculateEAD(DateTime launch, int days)
+  public DateTime GetNextStandardDate()
+  {
+    var nextStandardLaunchDate = new DateTime(2025, 10, 1);
+
+    while (nextStandardLaunchDate < DateTime.UtcNow)
+    {
+      nextStandardLaunchDate = nextStandardLaunchDate.AddMonths(26);
+    }
+
+    return nextStandardLaunchDate;
+  }
+
+  public string CalculateEAD(DateTime launch, int days)
   {
     var ead = launch.AddDays(days);
     return ead.ToString("yyyy-MM-dd");
 
   }
 
-  private void CheckValidBarcode(string barcode)
+  public void CheckValidBarcode(string barcode)
   {
-    if (barcode.Length != 25)
-    {
-      throw new Exception("Barcode needs to be 25 characters long");
-    }
-
     if (!barcode.StartsWith("RMARS"))
     {
       throw new Exception("Barcode has to start with RMAS");
     }
-
-    var numbers = barcode.Substring(5, 19);
-
-    if (!numbers.All(char.IsNumber))
-    {
-      throw new Exception("Barcode must have 19 digits");
-    }
-
 
     var lastLetter = barcode[barcode.Length - 1];
     if (!(lastLetter >= 'A' && lastLetter <= 'Z'))
@@ -224,9 +222,16 @@ public class ParcelService : IParcelService
     }
 
 
+    var count = barcode.Count(char.IsDigit);
+
+    if (count != 19)
+    {
+      throw new Exception("Barcode must have 19 digits");
+    }
+
   }
 
-  private Parcel FindExistingParcel(string barcode)
+  public Parcel FindExistingParcel(string barcode)
   {
     CheckValidBarcode(barcode);
 
